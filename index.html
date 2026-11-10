@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Bubble Live</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='26' fill='%239147ff'/%3E%3Ccircle cx='50' cy='48' r='26' fill='%23fff'/%3E%3Ccircle cx='72' cy='76' r='9' fill='%23fff'/%3E%3Cpath d='M43 36l20 12-20 12z' fill='%239147ff'/%3E%3C/svg%3E">
+<style>
+:root{--bg:#0e0e10;--side:#1f1f23;--card:#18181b;--line:#2f2f35;--tx:#efeff1;--mut:#adadb8;--acc:#9147ff;--live:#eb0400}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--tx);font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;font-size:14px;height:100vh;overflow:hidden}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+input,textarea,select{font:inherit;color:var(--tx);background:#0e0e10;border:1px solid var(--line);border-radius:6px;padding:9px 10px;width:100%;outline:none}
+input:focus,textarea:focus,select:focus{border-color:var(--acc)}
+.hidden{display:none!important}
+.btn{background:var(--acc);color:#fff;font-weight:700;border-radius:6px;padding:8px 14px}.btn:hover{filter:brightness(1.12)}.btn.gray{background:#2f2f35}.btn.red{background:var(--live)}
+.logo{display:flex;align-items:center;gap:8px;font-weight:800;font-size:18px}.logo svg{width:32px;height:32px}
+/* login */
+#login{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:radial-gradient(circle at 30% 20%,#3a1d6e,#0e0e10 60%)}
+.lcard{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:30px;width:min(400px,92vw)}
+.lcard .logo{justify-content:center;font-size:26px;margin-bottom:6px}.lcard .logo svg{width:46px;height:46px}
+.lcard p.sub{text-align:center;color:var(--mut);margin-bottom:18px}
+.lcard label{display:block;font-size:12px;font-weight:700;color:var(--mut);margin:10px 0 5px}
+.lcard .btn{width:100%;margin-top:16px;padding:11px}
+#lerr{color:#ff6b6e;font-size:13px;margin-top:8px;min-height:16px}
+.or{text-align:center;color:var(--mut);margin:12px 0 0;font-size:12px}
+/* app */
+#app{display:flex;flex-direction:column;height:100vh}
+#top{height:50px;display:flex;align-items:center;gap:14px;padding:0 14px;background:var(--side);border-bottom:1px solid #000;flex-shrink:0}
+#top .nv{font-weight:700;font-size:16px;color:var(--tx);padding:4px 6px}#top .nv.on{color:#bf94ff}
+#top .sp{flex:1}
+#top .srch{max-width:340px}
+.meBtn{display:flex;align-items:center;gap:8px;font-weight:600}
+.av{border-radius:50%;background:#444 center/cover;display:inline-flex;align-items:center;justify-content:center;font-weight:800;color:#fff;flex-shrink:0}
+#body{flex:1;display:flex;min-height:0}
+#side{width:240px;background:var(--side);overflow-y:auto;padding:10px 0;flex-shrink:0}
+#side h4{font-size:13px;text-transform:uppercase;color:var(--tx);padding:8px 12px;letter-spacing:.03em}
+.ch{display:flex;align-items:center;gap:10px;padding:6px 12px;cursor:pointer}.ch:hover{background:#26262c}
+.ch .n{flex:1;min-width:0}.ch .n b{display:block;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.ch .n small{color:var(--mut);font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--live);display:inline-block}
+.ch .vc{font-size:12px;display:flex;align-items:center;gap:4px}
+#main{flex:1;overflow-y:auto;min-width:0}
+.page{padding:24px 30px}
+.page h1{font-size:28px;margin-bottom:6px}.page h2{font-size:18px;margin:26px 0 12px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:18px}
+.card{cursor:pointer}.thumb{aspect-ratio:16/9;background:#26262c center/cover;border-radius:4px;position:relative;transition:transform .15s}
+.card:hover .thumb{transform:translate(4px,-4px);box-shadow:-4px 4px 0 var(--acc)}
+.badge{position:absolute;left:8px;top:8px;background:var(--live);color:#fff;font-weight:700;font-size:12px;padding:1px 6px;border-radius:4px}
+.vcount{position:absolute;left:8px;bottom:8px;background:#000c;font-size:12px;padding:1px 6px;border-radius:4px}
+.cinfo{display:flex;gap:10px;margin-top:8px}.cinfo b{display:block;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.cinfo small{display:block;color:var(--mut);font-size:13px}
+.tagc{display:inline-block;background:#2f2f35;border-radius:10px;padding:2px 8px;font-size:12px;margin-top:4px;color:var(--mut)}
+.cats{display:flex;gap:10px;flex-wrap:wrap}.cat{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:10px 14px;cursor:pointer;font-weight:600}.cat.on{border-color:var(--acc);color:#bf94ff}
+.hero{border-radius:12px;padding:28px;background:linear-gradient(135deg,#9147ff,#5c16c5 60%,#2a0a5e);margin-bottom:10px}
+.hero p{color:#e5d9ff;margin:6px 0 14px}
+.empty{color:var(--mut);padding:30px;text-align:center;background:var(--card);border-radius:8px}
+/* watch */
+.watch{display:flex;height:100%}
+.wleft{flex:1;overflow-y:auto;min-width:0}
+.player{background:#000;aspect-ratio:16/9;max-height:calc(100vh - 170px);width:100%;position:relative;display:flex;align-items:center;justify-content:center}
+.player video{width:100%;height:100%;object-fit:contain;background:#000}
+.ov{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;color:var(--mut);text-align:center;padding:20px}
+.winfo{display:flex;gap:14px;padding:16px 20px;align-items:flex-start}
+.winfo h2{font-size:18px;margin:0}.winfo .t{font-size:15px;margin:4px 0}
+.wright{width:340px;background:var(--card);border-left:1px solid var(--line);display:flex;flex-direction:column;flex-shrink:0}
+.chead{padding:12px;text-align:center;font-weight:700;font-size:13px;border-bottom:1px solid var(--line);text-transform:uppercase}
+#chat{flex:1;overflow-y:auto;padding:10px 12px;font-size:14px;line-height:1.5}
+.cm{padding:3px 4px;border-radius:4px;word-wrap:break-word}.cm:hover{background:#26262c}.cm b{cursor:pointer}.cm .x{float:right;color:var(--mut);display:none;font-size:12px}.cm:hover .x{display:inline}
+.cm.sys{color:var(--mut);font-style:italic}
+.cform{padding:10px 12px;display:flex;gap:8px;border-top:1px solid var(--line)}
+.emos{display:flex;gap:4px;padding:0 12px 10px;flex-wrap:wrap}.emos button{font-size:18px;padding:2px 4px;border-radius:4px}.emos button:hover{background:#26262c}
+/* dashboard */
+.dash{display:grid;grid-template-columns:1fr 340px;gap:20px}
+.box{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:16px}
+.box label{display:block;font-size:12px;font-weight:700;color:var(--mut);margin:12px 0 5px}
+.stat{display:flex;gap:20px;margin-top:10px}.stat div{background:#0e0e10;border-radius:8px;padding:10px 14px;flex:1}.stat b{font-size:22px;display:block}.stat small{color:var(--mut)}
+.src{display:flex;gap:8px}.src button{flex:1;background:#0e0e10;border:1px solid var(--line);border-radius:8px;padding:12px;font-weight:600}.src button.on{border-color:var(--acc);color:#bf94ff}
+#toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#2f2f35;padding:10px 16px;border-radius:8px;font-weight:600;z-index:99;box-shadow:0 6px 20px #000a}
+@media (max-width:900px){#side{display:none}.watch{flex-direction:column}.wright{width:100%;height:45vh;border-left:0}.dash{grid-template-columns:1fr}.page{padding:16px}#top .srch{display:none}}
+</style>
+</head>
+<body>
+<div id="login" class="hidden"><div class="lcard">
+  <div class="logo" id="llogo"></div>
+  <p class="sub" id="lsub">Přihlas se a sleduj živé streamy</p>
+  <div id="regWrap" class="hidden"><label>Jméno kanálu</label><input id="luser" maxlength="20" placeholder="wolfe"></div>
+  <label>E-mail</label><input id="lemail" type="email" autocomplete="email">
+  <label>Heslo</label><input id="lpass" type="password" autocomplete="current-password">
+  <div id="lerr"></div>
+  <button class="btn" id="lgo">Přihlásit se</button>
+  <div class="or">nebo</div>
+  <button class="btn gray" id="lgoogle">Pokračovat přes Google</button>
+  <p style="text-align:center;margin-top:14px;color:var(--mut);font-size:13px"><span id="lq">Nemáš účet?</span> <button id="lswitch" style="color:#bf94ff;font-weight:700">Zaregistruj se</button></p>
+</div></div>
+
+<div id="app" class="hidden">
+  <div id="top">
+    <button class="logo" id="goHome"></button>
+    <button class="nv" data-nv="home">Procházet</button>
+    <button class="nv" data-nv="follow">Sledované</button>
+    <span class="sp"></span>
+    <input class="srch" id="srch" placeholder="Hledat kanál">
+    <span class="sp"></span>
+    <button class="btn" id="goLive">🔴 Jít live</button>
+    <button class="meBtn" id="meBtn"></button>
+  </div>
+  <div id="body">
+    <div id="side"></div>
+    <div id="main"></div>
+  </div>
+</div>
+<div id="toast" class="hidden"></div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, signInWithPopup, GoogleAuthProvider } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+import { getFirestore, collection, doc, setDoc, addDoc, getDoc, updateDoc, deleteDoc, onSnapshot, query, where, arrayUnion, arrayRemove } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+const VERSION = '1.0';
+const firebaseConfig = {"apiKey": "AIzaSyBovG00qfDWUBcS9pJlS_FwOH4etF9Sv0Y", "authDomain": "flex-bubble.firebaseapp.com", "projectId": "flex-bubble", "storageBucket": "flex-bubble.firebasestorage.app", "messagingSenderId": "171220277752", "appId": "1:171220277752:web:d5d68647bf1759db58de0d"};
+const OWNER_EMAIL = 'mrwolfvrcz@gmail.com';
+const fb = initializeApp(firebaseConfig, 'bubblelive');
+const auth = getAuth(fb), db = getFirestore(fb);
+const C = n => collection(db, n), D = (n, i) => doc(db, n, i);
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const slug = s => String(s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9_]/g, '').slice(0, 20);
+const LOGO = `<svg viewBox="0 0 100 100"><rect width="100" height="100" rx="26" fill="#9147ff"/><circle cx="50" cy="48" r="26" fill="#fff"/><circle cx="72" cy="76" r="9" fill="#fff"/><path d="M43 36l20 12-20 12z" fill="#9147ff"/></svg>`;
+const CATS = ['Minecraft', 'Roblox', 'Fortnite', 'KSP', 'Just Chatting', 'Kreslení', 'Hudba', 'Programování', 'Škola', 'Jiné'];
+const COLORS = ['#9147ff', '#eb0400', '#00c8af', '#ff7f50', '#1e90ff', '#ff69b4', '#2e8b57', '#daa520'];
+const MAX_VIEWERS = 10, FRESH = 45000;
+const ICE = { iceServers: [{ urls: ['stun:stun.l.google.com:19302', 'stun:stun1.l.google.com:19302', 'stun:stun.cloudflare.com:3478'] }] };
+let me = null, prof = null, users = {}, streams = {}, follows = [], page = 'home', catSel = '', unsubs = [];
+let toastT;
+function toast(t) { $('toast').textContent = t; $('toast').classList.remove('hidden'); clearTimeout(toastT); toastT = setTimeout(() => $('toast').classList.add('hidden'), 2600); }
+const fail = e => { console.error(e); toast('❌ ' + (e.code || e.message || e)); };
+$('llogo').innerHTML = LOGO + '<span>Bubble Live</span>';
+$('goHome').innerHTML = LOGO + '<span>Bubble Live</span>';
+const isLive = s => s && s.live && Date.now() - (s.t || 0) < FRESH;
+const avatar = (uid, size) => { const u = users[uid] || {}; return `<span class="av" style="width:${size}px;height:${size}px;font-size:${size * .45}px;background-color:${u.color || '#9147ff'}">${esc((u.name || '?')[0].toUpperCase())}</span>`; };
+const nameOf = uid => users[uid]?.name || 'kanál';
+
+/* ---------- LOGIN ---------- */
+let regMode = false, wantName = '';
+$('lswitch').onclick = () => { regMode = !regMode; $('regWrap').classList.toggle('hidden', !regMode); $('lgo').textContent = regMode ? 'Vytvořit účet' : 'Přihlásit se'; $('lq').textContent = regMode ? 'Už máš účet?' : 'Nemáš účet?'; $('lswitch').textContent = regMode ? 'Přihlas se' : 'Zaregistruj se'; };
+const authErr = c => ({ 'auth/invalid-credential': 'Špatný e-mail nebo heslo', 'auth/email-already-in-use': 'Tenhle e-mail už má účet', 'auth/weak-password': 'Heslo musí mít aspoň 6 znaků', 'auth/invalid-email': 'Neplatný e-mail', 'auth/too-many-requests': 'Moc pokusů, zkus to za chvíli', 'auth/popup-closed-by-user': 'Okno se zavřelo' }[c] || c);
+async function doLogin() {
+  $('lerr').textContent = '';
+  try {
+    if (regMode) {
+      wantName = slug($('luser').value);
+      if (wantName.length < 3) { $('lerr').textContent = 'Jméno aspoň 3 znaky (a-z, 0-9, _)'; return; }
+      const s = await getDoc(D('bl_names', wantName)); if (s.exists()) { $('lerr').textContent = 'Jméno je zabrané'; return; }
+      await createUserWithEmailAndPassword(auth, $('lemail').value.trim(), $('lpass').value);
+    } else await signInWithEmailAndPassword(auth, $('lemail').value.trim(), $('lpass').value);
+  } catch (e) { $('lerr').textContent = authErr(e.code); }
+}
+$('lgo').onclick = doLogin;
+$('lpass').onkeydown = e => { if (e.key === 'Enter') doLogin(); };
+$('lgoogle').onclick = async () => { try { await signInWithPopup(auth, new GoogleAuthProvider()); } catch (e) { $('lerr').textContent = authErr(e.code); } };
+
+async function setupUser(u) {
+  const ref = D('bl_users', u.uid), s = await getDoc(ref), cur = s.exists() ? s.data() : {};
+  let name = cur.name;
+  if (!name) {
+    const base = wantName || slug(u.email === OWNER_EMAIL ? 'wolfe' : (u.displayName || (u.email || 'streamer').split('@')[0])) || 'streamer';
+    name = base; let n = 0;
+    while (n < 8) { const c = await getDoc(D('bl_names', name)); if (!c.exists() || c.data().uid === u.uid) break; name = base.slice(0, 15) + Math.floor(Math.random() * 9000 + 1000); n++; }
+    await setDoc(D('bl_names', name), { uid: u.uid });
+  }
+  prof = { name, color: cur.color || COLORS[Math.floor(Math.random() * COLORS.length)], bio: cur.bio || '', since: cur.since || Date.now() };
+  await setDoc(ref, { ...prof, seen: Date.now() }, { merge: true });
+}
+
+onAuthStateChanged(auth, async u => {
+  unsubs.forEach(f => f()); unsubs = []; stopWatch(); if (live) await stopLive();
+  if (!u) { me = null; $('app').classList.add('hidden'); $('login').classList.remove('hidden'); return; }
+  me = u;
+  try { await setupUser(u); } catch (e) { fail(e); return; }
+  $('login').classList.add('hidden'); $('app').classList.remove('hidden');
+  unsubs.push(onSnapshot(C('bl_users'), s => { users = {}; s.forEach(d => users[d.id] = d.data()); renderTop(); renderSide(); if (page === 'home' || page === 'follow') render(); }));
+  unsubs.push(onSnapshot(C('bl_streams'), s => { streams = {}; s.forEach(d => streams[d.id] = d.data()); renderSide(); if (page === 'home' || page === 'follow') render(); if (watching) renderWatchInfo(); }));
+  unsubs.push(onSnapshot(D('bl_follows', u.uid), s => { follows = s.data()?.list || []; renderSide(); if (page === 'follow') render(); if (watching) renderWatchInfo(); }));
+  const k = new URLSearchParams(location.search).get('k');
+  if (k) { const s = await getDoc(D('bl_names', slug(k))); if (s.exists()) return openWatch(s.data().uid); }
+  go('home');
+});
+setInterval(() => { if (me) updateDoc(D('bl_users', me.uid), { seen: Date.now() }).catch(() => {}); renderSide(); }, 30000);
+
+/* ---------- NAV ---------- */
+function renderTop() {
+  $('meBtn').innerHTML = avatar(me.uid, 30) + `<span>${esc(prof.name)}</span>`;
+  document.querySelectorAll('[data-nv]').forEach(b => b.classList.toggle('on', b.dataset.nv === page));
+}
+document.querySelectorAll('[data-nv]').forEach(b => b.onclick = () => go(b.dataset.nv));
+$('goHome').onclick = () => go('home');
+$('goLive').onclick = () => go('dash');
+$('meBtn').onclick = () => go('me');
+$('srch').oninput = () => { if (page !== 'home') go('home'); else render(); };
+function go(p) {
+  if (p !== 'watch') stopWatch();
+  page = p; history.replaceState(null, '', location.pathname); renderTop(); render();
+}
+function render() {
+  if (page === 'home') return renderHome();
+  if (page === 'follow') return renderFollow();
+  if (page === 'dash') return renderDash();
+  if (page === 'me') return renderMe();
+}
+function liveList() { return Object.entries(streams).filter(([, s]) => isLive(s)).sort((a, b) => (b[1].viewers || 0) - (a[1].viewers || 0)); }
+function renderSide() {
+  if (!me) return;
+  const L = liveList(), live = new Set(L.map(x => x[0]));
+  const fol = follows.filter(id => users[id]).sort((a, b) => live.has(b) - live.has(a));
+  const row = id => { const s = streams[id], on = live.has(id); return `<div class="ch" data-w="${id}">${avatar(id, 30)}<div class="n"><b>${esc(nameOf(id))}</b><small>${on ? esc(s.cat || '') : 'Offline'}</small></div>${on ? `<span class="vc"><span class="dot"></span>${s.viewers || 0}</span>` : ''}</div>`; };
+  $('side').innerHTML = `<h4>Sledované kanály</h4>${fol.map(row).join('') || '<p style="color:var(--mut);padding:4px 12px 10px;font-size:13px">Zatím nikoho nesleduješ</p>'}
+    <h4>Doporučené kanály</h4>${L.filter(([id]) => !follows.includes(id)).map(([id]) => row(id)).join('') || '<p style="color:var(--mut);padding:4px 12px;font-size:13px">Nikdo teď nestreamuje</p>'}`;
+  $('side').querySelectorAll('[data-w]').forEach(e => e.onclick = () => openWatch(e.dataset.w));
+}
+const cardH = ([id, s]) => `<div class="card" data-w="${id}"><div class="thumb" style="${s.thumb ? `background-image:url(${s.thumb})` : ''}"><span class="badge">ŽIVĚ</span><span class="vcount">${s.viewers || 0} diváků</span></div><div class="cinfo">${avatar(id, 40)}<div style="min-width:0"><b>${esc(s.title || 'Bez názvu')}</b><small>${esc(nameOf(id))}</small><span class="tagc">${esc(s.cat || 'Jiné')}</span></div></div></div>`;
+function bindCards() { $('main').querySelectorAll('[data-w]').forEach(e => e.onclick = () => openWatch(e.dataset.w)); }
+function renderHome() {
+  const q = $('srch').value.trim().toLowerCase();
+  let L = liveList();
+  if (catSel) L = L.filter(([, s]) => s.cat === catSel);
+  if (q) L = L.filter(([id, s]) => (nameOf(id) + ' ' + (s.title || '')).toLowerCase().includes(q));
+  const off = q ? Object.keys(users).filter(id => !isLive(streams[id]) && nameOf(id).toLowerCase().includes(q)).slice(0, 12) : [];
+  $('main').innerHTML = `<div class="page">
+    <div class="hero"><h1>🟣 Bubble Live</h1><p>Streamuj hry, kreslení nebo jen pokec. Zdarma, bez reklam, bez paywallu.</p><button class="btn" id="hLive" style="background:#fff;color:#5c16c5">🔴 Jít live</button></div>
+    <h2>Kategorie</h2><div class="cats"><button class="cat ${!catSel ? 'on' : ''}" data-c="">Vše</button>${CATS.map(c => `<button class="cat ${catSel === c ? 'on' : ''}" data-c="${c}">${c}</button>`).join('')}</div>
+    <h2>Živé kanály${catSel ? ' – ' + esc(catSel) : ''}</h2>${L.length ? `<div class="grid">${L.map(cardH).join('')}</div>` : '<div class="empty">📺 Teď nikdo nestreamuje. Buď první a dej Jít live!</div>'}
+    ${off.length ? `<h2>Kanály</h2><div>${off.map(id => `<div class="ch" data-w="${id}">${avatar(id, 36)}<div class="n"><b>${esc(nameOf(id))}</b><small>Offline</small></div></div>`).join('')}</div>` : ''}</div>`;
+  $('hLive').onclick = () => go('dash');
+  $('main').querySelectorAll('[data-c]').forEach(b => b.onclick = () => { catSel = b.dataset.c; renderHome(); });
+  bindCards();
+}
+function renderFollow() {
+  const L = liveList().filter(([id]) => follows.includes(id));
+  const off = follows.filter(id => users[id] && !isLive(streams[id]));
+  $('main').innerHTML = `<div class="page"><h1>Sledované</h1><h2>Živě</h2>${L.length ? `<div class="grid">${L.map(cardH).join('')}</div>` : '<div class="empty">Nikdo z tvých sledovaných teď nestreamuje 😴</div>'}
+    <h2>Offline</h2>${off.map(id => `<div class="ch" data-w="${id}">${avatar(id, 36)}<div class="n"><b>${esc(nameOf(id))}</b><small>${esc(users[id].bio || 'Offline')}</small></div></div>`).join('') || '<p style="color:var(--mut)">Nikoho dalšího nesleduješ.</p>'}</div>`;
+  bindCards();
+}
+function renderMe() {
+  $('main').innerHTML = `<div class="page" style="max-width:520px"><h1>Můj kanál</h1><div class="box" style="margin-top:14px">
+    <div style="display:flex;align-items:center;gap:12px">${avatar(me.uid, 64)}<div><b style="font-size:20px">${esc(prof.name)}</b><div style="color:var(--mut)">${followerCount(me.uid)} sledujících</div></div></div>
+    <label>Barva</label><div style="display:flex;gap:8px">${COLORS.map(c => `<button data-col="${c}" style="width:30px;height:30px;border-radius:50%;background:${c};${c === prof.color ? 'outline:2px solid #fff;outline-offset:2px' : ''}"></button>`).join('')}</div>
+    <label>O mně</label><textarea id="mbio" rows="3" maxlength="200">${esc(prof.bio)}</textarea>
+    <div style="display:flex;gap:8px;margin-top:14px"><button class="btn" id="msave">Uložit</button><button class="btn gray" id="mlink">🔗 Kopírovat odkaz na kanál</button><button class="btn gray" id="mout">Odhlásit</button></div></div>
+    <p style="color:var(--mut);font-size:12px;margin-top:14px">Bubble Live v${VERSION}</p></div>`;
+  $('main').querySelectorAll('[data-col]').forEach(b => b.onclick = () => { prof.color = b.dataset.col; renderMe(); });
+  $('msave').onclick = async () => { prof.bio = $('mbio').value.trim(); try { await updateDoc(D('bl_users', me.uid), { color: prof.color, bio: prof.bio }); toast('✅ Uloženo'); } catch (e) { fail(e); } };
+  $('mlink').onclick = () => { navigator.clipboard?.writeText(location.origin + location.pathname + '?k=' + prof.name); toast('🔗 Odkaz zkopírován'); };
+  $('mout').onclick = () => signOut(auth);
+}
+const followerCount = uid => Object.values(users).filter(u => (u.following || []).includes(uid)).length;
+
+/* ---------- CHAT ---------- */
+let chatUnsub = null, chatMsgs = [], chatFor = null, lastSend = 0;
+const EMOS = ['😂', '🔥', '❤️', '👏', '😮', 'GG', '🐻', '💜', '👋', '😭'];
+function openChat(sid) {
+  chatUnsub && chatUnsub(); chatFor = sid; chatMsgs = [];
+  chatUnsub = onSnapshot(query(C('bl_chat'), where('s', '==', sid)), s => {
+    chatMsgs = s.docs.map(d => ({ id: d.id, ...d.data() })).filter(m => Date.now() - m.t < 6 * 3600e3).sort((a, b) => a.t - b.t).slice(-150);
+    drawChat();
+  }, fail);
+}
+function drawChat() {
+  const box = $('chat'); if (!box) return;
+  const atBottom = box.scrollHeight - box.scrollTop - box.clientHeight < 60;
+  const canDel = chatFor === me.uid;
+  box.innerHTML = chatMsgs.map(m => m.sys ? `<div class="cm sys">${esc(m.text)}</div>` : `<div class="cm">${canDel || m.uid === me.uid ? `<button class="x" data-del="${m.id}">✕</button>` : ''}<b style="color:${users[m.uid]?.color || '#bf94ff'}">${m.uid === chatFor ? '🎥 ' : ''}${esc(nameOf(m.uid))}</b>: ${esc(m.text)}</div>`).join('') || '<div class="cm sys">Vítej v chatu! Napiš něco 👋</div>';
+  box.querySelectorAll('[data-del]').forEach(b => b.onclick = () => deleteDoc(D('bl_chat', b.dataset.del)).catch(fail));
+  if (atBottom) box.scrollTop = box.scrollHeight;
+}
+async function sendChat(t) {
+  t = t.trim(); if (!t || !chatFor) return;
+  if (Date.now() - lastSend < 1000) return toast('🐢 Pomaleji');
+  lastSend = Date.now();
+  try { await addDoc(C('bl_chat'), { s: chatFor, uid: me.uid, text: t.slice(0, 300), t: Date.now() }); } catch (e) { fail(e); }
+}
+function chatPanel() {
+  return `<div class="wright"><div class="chead">Chat streamu</div><div id="chat"></div><div class="emos">${EMOS.map(e => `<button data-emo="${e}">${e}</button>`).join('')}</div><form class="cform" id="cform"><input id="cin" maxlength="300" placeholder="Napiš zprávu" autocomplete="off"><button class="btn">Chat</button></form></div>`;
+}
+function bindChat() {
+  $('cform').onsubmit = e => { e.preventDefault(); const v = $('cin').value; $('cin').value = ''; sendChat(v); };
+  document.querySelectorAll('[data-emo]').forEach(b => b.onclick = () => sendChat(b.dataset.emo));
+  drawChat();
+}
+
+/* ---------- WATCH (viewer) ---------- */
+let watching = null, vpc = null, vDocId = null, vWatch = null, vAnsUnsub = null;
+function stopWatch() {
+  if (vAnsUnsub) { vAnsUnsub(); vAnsUnsub = null; }
+  if (vpc) { try { vpc.close(); } catch {} vpc = null; }
+  if (vDocId) { deleteDoc(D('bl_rtc', vDocId)).catch(() => {}); vDocId = null; }
+  clearInterval(vWatch); vWatch = null;
+  if (watching && chatUnsub && chatFor === watching) { chatUnsub(); chatUnsub = null; }
+  watching = null;
+}
+async function openWatch(sid) {
+  if (sid === me.uid && live) return go('dash');
+  stopWatch(); page = 'watch'; watching = sid; renderTop();
+  history.replaceState(null, '', location.pathname + '?k=' + encodeURIComponent(nameOf(sid)));
+  $('main').innerHTML = `<div class="watch"><div class="wleft"><div class="player"><video id="vid" autoplay playsinline controls></video><div class="ov" id="vov"></div></div><div id="winfo"></div></div>${chatPanel()}</div>`;
+  renderWatchInfo(); openChat(sid); bindChat();
+  connectViewer();
+  vWatch = setInterval(() => { if (!watching) return; const s = streams[watching]; const st = vpc?.connectionState; if (isLive(s) && (!vpc || st === 'failed' || st === 'closed' || (st === 'disconnected'))) connectViewer(); if (!isLive(s)) showOv('😴 ' + esc(nameOf(watching)) + ' je teď offline'); }, 8000);
+}
+function showOv(h) { const o = $('vov'); if (o) { o.innerHTML = h; o.classList.toggle('hidden', !h); } }
+function renderWatchInfo() {
+  const el = $('winfo'); if (!el || !watching) return;
+  const s = streams[watching] || {}, on = isLive(s), fol = follows.includes(watching);
+  el.innerHTML = `<div class="winfo">${avatar(watching, 64)}<div style="flex:1;min-width:0"><h2>${esc(nameOf(watching))}</h2><div class="t">${esc(on ? s.title || 'Bez názvu' : users[watching]?.bio || '')}</div>${on ? `<span class="tagc">${esc(s.cat || 'Jiné')}</span> <span style="color:var(--live);font-weight:700;margin-left:8px">● ${s.viewers || 0} diváků</span>` : '<span class="tagc">Offline</span>'}</div>
+    ${watching !== me.uid ? `<button class="btn ${fol ? 'gray' : ''}" id="fbtn">${fol ? '💜 Sleduješ' : '🤍 Sledovat'}</button>` : ''}<button class="btn gray" id="shbtn" title="Sdílet">🔗</button></div>`;
+  const f = $('fbtn'); if (f) f.onclick = toggleFollow;
+  $('shbtn').onclick = () => { navigator.clipboard?.writeText(location.origin + location.pathname + '?k=' + nameOf(watching)); toast('🔗 Odkaz zkopírován'); };
+}
+async function toggleFollow() {
+  const id = watching, fol = follows.includes(id);
+  try {
+    await setDoc(D('bl_follows', me.uid), { list: fol ? arrayRemove(id) : arrayUnion(id) }, { merge: true });
+    await updateDoc(D('bl_users', me.uid), { following: fol ? arrayRemove(id) : arrayUnion(id) });
+    toast(fol ? 'Přestal jsi sledovat' : '💜 Sleduješ ' + nameOf(id));
+  } catch (e) { fail(e); }
+}
+const gatherDone = pc => new Promise(r => { if (pc.iceGatheringState === 'complete') return r(); const t = setTimeout(r, 3500); pc.addEventListener('icegatheringstatechange', () => { if (pc.iceGatheringState === 'complete') { clearTimeout(t); r(); } }); });
+async function connectViewer() {
+  const sid = watching; if (!sid) return;
+  const s = streams[sid];
+  if (!isLive(s)) { showOv('😴 ' + esc(nameOf(sid)) + ' je teď offline<br><small>Dej Sledovat a uvidíš, až bude live</small>'); return; }
+  showOv('⏳ Připojuji ke streamu…');
+  if (vAnsUnsub) { vAnsUnsub(); vAnsUnsub = null; }
+  if (vpc) { try { vpc.close(); } catch {} }
+  const pc = vpc = new RTCPeerConnection(ICE);
+  pc.addTransceiver('video', { direction: 'recvonly' }); pc.addTransceiver('audio', { direction: 'recvonly' });
+  const ms = new MediaStream();
+  pc.ontrack = e => { ms.addTrack(e.track); const v = $('vid'); if (v && v.srcObject !== ms) { v.srcObject = ms; v.play().catch(() => { showOv('▶️ Klikni pro spuštění'); $('vov').onclick = () => { v.play(); showOv(''); }; }); } };
+  pc.onconnectionstatechange = () => { if (vpc !== pc) return; if (pc.connectionState === 'connected') showOv(''); if (pc.connectionState === 'failed') showOv('⚠️ Spojení selhalo, zkouším znovu…'); };
+  try {
+    await pc.setLocalDescription(await pc.createOffer()); await gatherDone(pc);
+    if (vpc !== pc || watching !== sid) return;
+    vDocId = sid + '_' + me.uid;
+    await setDoc(D('bl_rtc', vDocId), { s: sid, v: me.uid, offer: pc.localDescription.sdp, sess: s.sess || '', t: Date.now(), answer: '' });
+    vAnsUnsub = onSnapshot(D('bl_rtc', vDocId), async d => {
+      const x = d.data(); if (!x || vpc !== pc) return;
+      if (x.full) { showOv('😕 Stream je plný (max ' + MAX_VIEWERS + ' diváků). Zkus to za chvíli.'); return; }
+      if (x.answer && !pc.currentRemoteDescription) { try { await pc.setRemoteDescription({ type: 'answer', sdp: x.answer }); } catch (e) { console.warn(e); } }
+    });
+  } catch (e) { fail(e); }
+}
+window.addEventListener('beforeunload', () => { if (vDocId) deleteDoc(D('bl_rtc', vDocId)); if (live) updateDoc(D('bl_streams', me.uid), { live: false }); });
+
+/* ---------- GO LIVE (streamer) ---------- */
+let live = null; // { stream, peers:{}, unsub, hb, sess }
+let dashSrc = 'screen', dashMic = true, preview = null;
+function renderDash() {
+  const s = streams[me.uid] || {};
+  $('main').innerHTML = `<div class="watch"><div class="wleft"><div class="page"><h1>${live ? '🔴 Jsi živě!' : '🎥 Jít live'}</h1>
+    <div class="dash" style="margin-top:14px"><div>
+      <div class="player" style="border-radius:8px;overflow:hidden"><video id="pv" autoplay playsinline muted></video><div class="ov" id="pvov">${live ? '' : 'Náhled se ukáže po spuštění'}</div></div>
+      ${live ? `<div class="stat"><div><b id="stV">0</b><small>diváků teď</small></div><div><b id="stT">0:00</b><small>čas živě</small></div><div><b>${followerCount(me.uid)}</b><small>sledujících</small></div></div>` : ''}
+    </div><div class="box">
+      <label>Název streamu</label><input id="dt" maxlength="80" value="${esc(s.title || 'Hraju a kecám 🎮')}">
+      <label>Kategorie</label><select id="dc">${CATS.map(c => `<option ${c === (s.cat || 'Minecraft') ? 'selected' : ''}>${c}</option>`).join('')}</select>
+      <label>Co streamovat</label><div class="src"><button data-src="screen" class="${dashSrc === 'screen' ? 'on' : ''}">🖥️ Obrazovka</button><button data-src="cam" class="${dashSrc === 'cam' ? 'on' : ''}">📷 Kamera</button></div>
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" id="dm" style="width:auto" ${dashMic ? 'checked' : ''}> 🎙️ Mikrofon</label>
+      ${live ? `<button class="btn gray" id="dupd" style="width:100%;margin-top:14px">💾 Uložit název a kategorii</button><button class="btn red" id="dstop" style="width:100%;margin-top:8px">⏹ Ukončit stream</button>` : `<button class="btn red" id="dgo" style="width:100%;margin-top:16px;padding:12px">🔴 Spustit stream</button>`}
+      <p style="color:var(--mut);font-size:12px;margin-top:12px">Zadarmo až pro ${MAX_VIEWERS} diváků najednou. Nech tuhle záložku otevřenou, jinak stream skončí. Na mobilu jde jen kamera.</p>
+    </div></div></div></div>${chatPanel()}</div>`;
+  openChat(me.uid); bindChat();
+  $('main').querySelectorAll('[data-src]').forEach(b => b.onclick = () => { if (live) return toast('Zdroj změníš po ukončení streamu'); dashSrc = b.dataset.src; renderDash(); });
+  $('dm').onchange = e => { dashMic = e.target.checked; if (live) live.stream.getAudioTracks().forEach(t => t.enabled = dashMic); };
+  if (live) {
+    $('pv').srcObject = live.stream;
+    $('dupd').onclick = () => updateDoc(D('bl_streams', me.uid), { title: $('dt').value.trim() || 'Bez názvu', cat: $('dc').value }).then(() => toast('✅ Uloženo')).catch(fail);
+    $('dstop').onclick = () => stopLive();
+    drawStats();
+  } else $('dgo').onclick = startLive;
+}
+function drawStats() {
+  if (!live) return; const v = $('stV'), t = $('stT');
+  if (v) v.textContent = Object.values(live.peers).filter(p => p.pc.connectionState === 'connected').length;
+  if (t) { const sec = Math.floor((Date.now() - live.start) / 1000); t.textContent = `${Math.floor(sec / 3600) ? Math.floor(sec / 3600) + ':' : ''}${String(Math.floor(sec / 60) % 60).padStart(Math.floor(sec / 3600) ? 2 : 1, '0')}:${String(sec % 60).padStart(2, '0')}`; }
+}
+async function startLive() {
+  let stream;
+  try {
+    if (dashSrc === 'screen') {
+      if (!navigator.mediaDevices?.getDisplayMedia) return toast('📱 Tady jde jen kamera');
+      stream = await navigator.mediaDevices.getDisplayMedia({ video: { frameRate: 30, width: { max: 1280 }, height: { max: 720 } }, audio: true });
+      if (dashMic) { try { const m = await navigator.mediaDevices.getUserMedia({ audio: true }); m.getAudioTracks().forEach(t => stream.addTrack(t)); } catch {} }
+    } else stream = await navigator.mediaDevices.getUserMedia({ video: { width: { ideal: 1280 }, height: { ideal: 720 } }, audio: dashMic });
+  } catch (e) { return toast('❌ Bez povolení to nejde: ' + (e.name || e)); }
+  const sess = Math.random().toString(36).slice(2, 10);
+  live = { stream, peers: {}, sess, start: Date.now() };
+  stream.getVideoTracks()[0].onended = () => stopLive();
+  const title = $('dt').value.trim() || 'Bez názvu', cat = $('dc').value;
+  try { await setDoc(D('bl_streams', me.uid), { live: true, title, cat, t: Date.now(), start: live.start, viewers: 0, sess, thumb: '' }); } catch (e) { fail(e); stream.getTracks().forEach(t => t.stop()); live = null; return; }
+  addDoc(C('bl_chat'), { s: me.uid, uid: me.uid, sys: true, text: '🔴 Stream začal: ' + title, t: Date.now() }).catch(() => {});
+  live.unsub = onSnapshot(query(C('bl_rtc'), where('s', '==', me.uid)), sn => { sn.docChanges().forEach(ch => { if (ch.type === 'removed') dropPeer(ch.doc.id); else handleViewer(ch.doc.id, ch.doc.data()); }); });
+  const hbW = new Worker(URL.createObjectURL(new Blob(['setInterval(()=>postMessage(1),15000)'], { type: 'text/javascript' })));
+  hbW.onmessage = () => heartbeat(); live.hbW = hbW;
+  live.tick = setInterval(drawStats, 1000);
+  setTimeout(snapThumb, 3000); live.th = setInterval(snapThumb, 60000);
+  toast('🔴 Jsi živě!'); renderDash();
+}
+async function handleViewer(id, x) {
+  if (!live || !x.offer || x.answer || x.full || live.peers[id]) return;
+  if (Date.now() - (x.t || 0) > 60000) { deleteDoc(D('bl_rtc', id)).catch(() => {}); return; }
+  if (Object.keys(live.peers).length >= MAX_VIEWERS) { updateDoc(D('bl_rtc', id), { full: true }).catch(() => {}); return; }
+  const pc = new RTCPeerConnection(ICE);
+  live.peers[id] = { pc, v: x.v };
+  live.stream.getTracks().forEach(t => pc.addTrack(t, live.stream));
+  pc.onconnectionstatechange = () => { if (pc.connectionState === 'failed' || pc.connectionState === 'closed') dropPeer(id); drawStats(); heartbeatSoon(); };
+  try {
+    await pc.setRemoteDescription({ type: 'offer', sdp: x.offer });
+    await pc.setLocalDescription(await pc.createAnswer()); await gatherDone(pc);
+    await updateDoc(D('bl_rtc', id), { answer: pc.localDescription.sdp });
+  } catch (e) { console.warn(e); dropPeer(id); }
+}
+function dropPeer(id) { const p = live?.peers[id]; if (!p) return; try { p.pc.close(); } catch {} delete live.peers[id]; drawStats(); heartbeatSoon(); }
+let hbSoonT;
+function heartbeatSoon() { clearTimeout(hbSoonT); hbSoonT = setTimeout(heartbeat, 800); }
+function heartbeat() { if (!live) return; const n = Object.values(live.peers).filter(p => p.pc.connectionState === 'connected').length; updateDoc(D('bl_streams', me.uid), { t: Date.now(), viewers: n, live: true }).catch(() => {}); }
+function snapThumb() {
+  if (!live) return; const v = $('pv'); if (!v || !v.videoWidth) return;
+  const c = document.createElement('canvas'); c.width = 320; c.height = 180; c.getContext('2d').drawImage(v, 0, 0, 320, 180);
+  updateDoc(D('bl_streams', me.uid), { thumb: c.toDataURL('image/jpeg', .6) }).catch(() => {});
+}
+async function stopLive() {
+  if (!live) return; const L = live; live = null;
+  L.unsub && L.unsub(); L.hbW && L.hbW.terminate(); clearInterval(L.tick); clearInterval(L.th);
+  Object.values(L.peers).forEach(p => { try { p.pc.close(); } catch {} });
+  L.stream.getTracks().forEach(t => t.stop());
+  try { await updateDoc(D('bl_streams', me.uid), { live: false, viewers: 0, t: Date.now() }); } catch {}
+  addDoc(C('bl_chat'), { s: me.uid, uid: me.uid, sys: true, text: '⏹ Stream skončil. Díky za sledování! 💜', t: Date.now() }).catch(() => {});
+  toast('⏹ Stream ukončen'); if (page === 'dash') renderDash();
+}
+</script>
+</body>
+</html>
