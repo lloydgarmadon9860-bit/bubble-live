@@ -109,13 +109,15 @@ input:focus,textarea:focus,select:focus{border-color:var(--acc)}
   </div>
 </div>
 <div id="toast" class="hidden"></div>
+<div id="boot" style="position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;color:#adadb8;text-align:center;padding:20px"><div style="font-size:40px">🟣</div><div id="bootTx">Načítám Bubble Live…</div></div>
+<script>window.addEventListener("error",e=>{const t=document.getElementById("bootTx");if(t&&document.getElementById("boot").style.display!=="none")t.innerHTML="❌ Chyba: "+(e.message||e)+"<br><small>Pošli to Harkovi</small>";});window.addEventListener("unhandledrejection",e=>{const t=document.getElementById("bootTx");if(t&&document.getElementById("boot").style.display!=="none")t.innerHTML="❌ Chyba: "+(e.reason&&(e.reason.code||e.reason.message)||e.reason)+"<br><small>Pošli to Harkovi</small>";});setTimeout(()=>{const t=document.getElementById("bootTx");if(t&&t.textContent.startsWith("Načítám"))t.innerHTML="⏳ Načítání trvá dlouho… zkus Ctrl+F5";},12000);</script>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
 import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, signInWithPopup, GoogleAuthProvider } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 import { getFirestore, collection, doc, setDoc, addDoc, getDoc, updateDoc, deleteDoc, onSnapshot, query, where, arrayUnion, arrayRemove } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-const VERSION = '1.0.1';
+const VERSION = '1.0.2';
 const firebaseConfig = {"apiKey": "AIzaSyBovG00qfDWUBcS9pJlS_FwOH4etF9Sv0Y", "authDomain": "flex-bubble.firebaseapp.com", "projectId": "flex-bubble", "storageBucket": "flex-bubble.firebasestorage.app", "messagingSenderId": "171220277752", "appId": "1:171220277752:web:d5d68647bf1759db58de0d"};
 const OWNER_EMAIL = 'mrwolfvrcz@gmail.com';
 const fb = initializeApp(firebaseConfig, 'bubblelive');
@@ -174,10 +176,11 @@ async function setupUser(u) {
 }
 
 onAuthStateChanged(auth, async u => {
+  $('boot').style.display = 'none';
   unsubs.forEach(f => f()); unsubs = []; stopWatch(); if (live) await stopLive();
   if (!u) { me = null; $('app').classList.add('hidden'); $('login').classList.remove('hidden'); return; }
   me = u;
-  try { await setupUser(u); } catch (e) { fail(e); $('lerr').textContent = 'Přihlášení se nepovedlo: ' + (e.code || e.message); return; }
+  try { await setupUser(u); } catch (e) { console.error(e); $('app').classList.add('hidden'); $('login').classList.remove('hidden'); $('lerr').innerHTML = '❌ Přihlášení se nepovedlo: ' + esc(e.code || e.message) + ' <button id="lreset" style="color:#bf94ff;font-weight:700">Odhlásit a zkusit znovu</button>'; $('lreset').onclick = () => signOut(auth); return; }
   $('login').classList.add('hidden'); $('app').classList.remove('hidden');
   unsubs.push(onSnapshot(C('bl_users'), s => { users = {}; s.forEach(d => users[d.id] = d.data()); renderTop(); renderSide(); if (page === 'home' || page === 'follow') render(); }));
   unsubs.push(onSnapshot(C('bl_streams'), s => { streams = {}; s.forEach(d => streams[d.id] = d.data()); renderSide(); if (page === 'home' || page === 'follow') render(); if (watching) renderWatchInfo(); }));
