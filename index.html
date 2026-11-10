@@ -115,12 +115,14 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebas
 import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, signInWithPopup, GoogleAuthProvider } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 import { getFirestore, collection, doc, setDoc, addDoc, getDoc, updateDoc, deleteDoc, onSnapshot, query, where, arrayUnion, arrayRemove } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-const VERSION = '1.0';
+const VERSION = '1.0.1';
 const firebaseConfig = {"apiKey": "AIzaSyBovG00qfDWUBcS9pJlS_FwOH4etF9Sv0Y", "authDomain": "flex-bubble.firebaseapp.com", "projectId": "flex-bubble", "storageBucket": "flex-bubble.firebasestorage.app", "messagingSenderId": "171220277752", "appId": "1:171220277752:web:d5d68647bf1759db58de0d"};
 const OWNER_EMAIL = 'mrwolfvrcz@gmail.com';
 const fb = initializeApp(firebaseConfig, 'bubblelive');
 const auth = getAuth(fb), db = getFirestore(fb);
-const C = n => collection(db, n), D = (n, i) => doc(db, n, i);
+const APP = 'flex-bubble-prod-v10';
+const C = n => collection(db, 'artifacts', APP, 'public', 'data', n);
+const D = (n, i) => doc(db, 'artifacts', APP, 'public', 'data', n, i);
 const $ = id => document.getElementById(id);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const slug = s => String(s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9_]/g, '').slice(0, 20);
@@ -175,7 +177,7 @@ onAuthStateChanged(auth, async u => {
   unsubs.forEach(f => f()); unsubs = []; stopWatch(); if (live) await stopLive();
   if (!u) { me = null; $('app').classList.add('hidden'); $('login').classList.remove('hidden'); return; }
   me = u;
-  try { await setupUser(u); } catch (e) { fail(e); return; }
+  try { await setupUser(u); } catch (e) { fail(e); $('lerr').textContent = 'Přihlášení se nepovedlo: ' + (e.code || e.message); return; }
   $('login').classList.add('hidden'); $('app').classList.remove('hidden');
   unsubs.push(onSnapshot(C('bl_users'), s => { users = {}; s.forEach(d => users[d.id] = d.data()); renderTop(); renderSide(); if (page === 'home' || page === 'follow') render(); }));
   unsubs.push(onSnapshot(C('bl_streams'), s => { streams = {}; s.forEach(d => streams[d.id] = d.data()); renderSide(); if (page === 'home' || page === 'follow') render(); if (watching) renderWatchInfo(); }));
